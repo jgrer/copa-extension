@@ -1,0 +1,24 @@
+name: test-copa-extension
+run-name: copa-extension-test
+on: [push]
+
+jobs:
+  main-test:
+    runs-on: ubuntu-latest
+    steps:
+      - id: start_desktop
+        uses: docker/desktop-action/start@v0.1.0
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Jest tests
+        run: npm test
