@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: start_desktop
-        uses: docker/desktop-action/start@v0.1.0
+        uses: docker/desktop-action/start@v0.3.6
 
       - name: Checkout code
         uses: actions/checkout@v2
