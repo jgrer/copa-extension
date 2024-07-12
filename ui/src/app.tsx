@@ -16,18 +16,27 @@ import {
   DialogActions,
   IconButton,
   Grow,
-  Collapse
+  Collapse,
+  Paper,
+  LinearProgress
 } from '@mui/material';
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 import { CopaInput } from './copainput';
 import { CommandLine } from './commandline';
+import { VulnerabilityDisplay } from './vulnerabilitydisplay';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
+const VULN_UNLOADED = 0;
+const VULN_LOADING = 1;
+const VULN_LOADED = 2;
+
+
 export function App() {
-  const ddClient = createDockerDesktopClient();
+
   const learnMoreLink = "https://project-copacetic.github.io/copacetic/website/";
 
+  const ddClient = createDockerDesktopClient();
   // The correct image name of the currently selected image. The latest tag is added if there is no tag.
   const [imageName, setImageName] = useState("");
 
@@ -37,7 +46,6 @@ export function App() {
   const [selectedImageTag, setSelectedImageTag] = useState<string | undefined>(undefined);
   const [selectedTimeout, setSelectedTimeout] = useState<string | undefined>(undefined);
   const [totalOutput, setTotalOutput] = useState("");
-  const [actualImageTag, setActualImageTag] = useState("");
   const [errorText, setErrorText] = useState("");
   const [useContainerdChecked, setUseContainerdChecked] = useState(false);
   const [jsonFileName, setJsonFileName] = useState("default");
@@ -48,8 +56,53 @@ export function App() {
   const [showLoading, setShowLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showFailure, setShowFailure] = useState(false);
-  const [showCopaOutputModal, setShowCopaOutputModal] = useState(false);
   const [showCommandLine, setShowCommandLine] = useState(false);
+
+  const baseImageName = selectedImage?.split(':')[0];
+
+
+  const [vulnState, setVulnState] = useState(VULN_UNLOADED);
+
+  const [vulnerabilityCount, setVulnerabilityCount] = useState<Record<string, number>>({
+    "UNKNOWN": 0,
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 0,
+    "CRITICAL": 0
+  });
+
+  const getTrivyOutput = async () => {
+    const output = await ddClient.docker.cli.exec("run", [
+      "-v",
+      "copa-extension-volume:/data",
+      "busybox",
+      "cat",
+      `data/${jsonFileName}`
+    ]);
+    const data = JSON.parse(output.stdout);
+    const severityMap: Record<string, number> = {
+      "UNKNOWN": 0,
+      "LOW": 0,
+      "MEDIUM": 0,
+      "HIGH": 0,
+      "CRITICAL": 0
+    };
+    if (data.Results) {
+      for (const result of data.Results) {
+        if (result.Vulnerabilities) {
+          for (const vulnerability of result.Vulnerabilities) {
+            severityMap[vulnerability.Severity]++;
+          }
+        }
+      }
+    }
+    setVulnerabilityCount(severityMap);
+    setVulnState(VULN_LOADED);
+  };
+
+  // -- Effects --
+
+  // On app launch, check for containerd
   useEffect(() => {
     const checkForContainerd = async () => {
       let containerdEnabled = await isContainerdEnabled();
@@ -58,7 +111,10 @@ export function App() {
     checkForContainerd();
   }, []);
 
+  // -----------
+
   const patchImage = () => {
+
     setShowPreload(false);
     setShowLoading(true);
     triggerCopa();
@@ -69,9 +125,15 @@ export function App() {
     setSelectedScanner(undefined);
     setSelectedImageTag(undefined);
     setSelectedTimeout(undefined);
+    setVulnerabilityCount({
+      "UNKNOWN": 0,
+      "LOW": 0,
+      "MEDIUM": 0,
+      "HIGH": 0,
+      "CRITICAL": 0
+    });
     setTotalOutput("");
-    setImageName("");
-    setActualImageTag("");
+    setVulnState(VULN_UNLOADED);
   }
 
   const processError = (error: string) => {
@@ -84,33 +146,78 @@ export function App() {
     }
   }
 
+  const generateJsonFileName = (imageName: string) => {
+    const str1 = imageName.split(':').join('.');
+    const str2 = str1.split("/").join('.');
+    return str2 + ".json";
+  }
+
+  async function triggerTrivy() {
+    let stdout = ""
+    let stderr = ""
+
+    setVulnState(VULN_LOADING);
+
+    // Force remove previous container
+    await ddClient.docker.cli.exec("rm", [
+      "-f",
+      "trivy-copa-extension-container",
+    ]);
+    let commandParts: string[] = [
+      "--mount",
+      "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock",
+      "-v",
+      "copa-extension-volume:/output",
+      "--name",
+      "trivy-copa-extension-container",
+      "aquasec/trivy",
+      "image",
+      "--vuln-type",
+      "os",
+      "--ignore-unfixed",
+      "--format",
+      "json",
+      "-o",
+      `output/${jsonFileName}`,
+      `${selectedImage}`
+    ];
+    ({ stdout, stderr } = await runTrivy(commandParts, stdout, stderr));
+  }
+
+  const getImageTag = () => {
+    if (selectedImage === null) {
+      return;
+    }
+    // Create the correct tag for the image
+    const imageSplit = selectedImage.split(':');
+    if (selectedImageTag === undefined || selectedImageTag === "") {
+      if (selectedImageTag !== undefined) {
+        return selectedImageTag;
+      } else if (imageSplit?.length === 1) {
+        return `latest-patched`;
+      } else {
+        return `${imageSplit[1]}-patched`;
+      }
+    } else {
+      return selectedImageTag;
+    }
+  }
+
   async function triggerCopa() {
     let stdout = "";
     let stderr = "";
-
-
-    let imageTag = "";
-    // Create the correct tag for the image
-    if (selectedImage !== null) {
-      let imageSplit = selectedImage.split(':');
-      if (selectedImageTag !== undefined) {
-        imageTag = selectedImageTag;
-      } else if (imageSplit?.length === 1) {
-        imageTag = `latest-patched`;
-      } else {
-        imageTag = `${imageSplit[1]}-patched`;
-      }
-    }
-    setActualImageTag(imageTag);
 
     if (selectedImage != null) {
       let commandParts: string[] = [
         "--mount",
         "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock",
         // "--name=copa-extension",
+        "-v",
+        "copa-extension-volume:/output",
         "copa-extension",
         `${selectedImage}`,
-        `${imageTag}`,
+        `${jsonFileName}`,
+        `${getImageTag()}`,
         `${selectedTimeout === undefined ? "5m" : selectedTimeout}`,
         `${useContainerdChecked ? 'custom-socket' : 'buildx'}`,
         "openvex"
@@ -118,6 +225,42 @@ export function App() {
       ({ stdout, stderr } = await runCopa(commandParts, stdout, stderr));
     }
   }
+
+  async function runTrivy(commandParts: string[], stdout: string, stderr: string) {
+    let tOutput = totalOutput;
+    await ddClient.docker.cli.exec(
+      "run", commandParts,
+      {
+        stream: {
+          onOutput(data: any) {
+            if (data.stdout) {
+              stdout += data.stdout;
+              tOutput += data.stdout;
+
+            }
+            if (data.stderr) {
+              stderr += data.stderr;
+              tOutput += data.stderr;
+            }
+            setTotalOutput(tOutput);
+          },
+          onClose(exitCode: number) {
+            if (exitCode == 0) {
+              ddClient.desktopUI.toast.success(`Trivy scan finished`);
+              getTrivyOutput();
+            } else if (exitCode !== 137) {
+              setVulnState(VULN_UNLOADED);
+              ddClient.desktopUI.toast.error(`Trivy scan failed: ${stderr}`);
+            }
+          },
+        },
+      }
+    );
+    return { stdout, stderr };
+  }
+
+
+
 
   async function isContainerdEnabled() {
     const result = await ddClient.docker.cli.exec("info", [
@@ -131,7 +274,7 @@ export function App() {
 
   async function runCopa(commandParts: string[], stdout: string, stderr: string) {
     let latestStderr: string = "";
-    let tOutput = "";
+    let tOutput = totalOutput;
     await ddClient.docker.cli.exec(
       "run", commandParts,
       {
@@ -154,10 +297,13 @@ export function App() {
             setShowLoading(false);
             if (exitCode == 0) {
               setShowSuccess(true);
-              ddClient.desktopUI.toast.success(`Copacetic - Created new patched image ${selectedImage}-${actualImageTag}`);
+              const newImageName = `${baseImageName}:${getImageTag()}`;
+              ddClient.desktopUI.toast.success(`Copacetic - Created new patched image ${newImageName}`);
+              setSelectedImage(newImageName);
+              setJsonFileName(generateJsonFileName(newImageName));
             } else {
               setShowFailure(true);
-              ddClient.desktopUI.toast.error(`Copacetic - Failed to patch image ${imageName}`);
+              ddClient.desktopUI.toast.error(`Copacetic - Failed to patch image ${selectedImage}`);
               processError(latestStderr);
             }
           },
@@ -166,6 +312,7 @@ export function App() {
     );
     return { stdout, stderr };
   }
+
 
   const showCommandLineButton = (
     <IconButton aria-label="show-command-line" onClick={() => { setShowCommandLine(!showCommandLine) }}>
@@ -179,13 +326,13 @@ export function App() {
         width={80}
       >
       </Box>
-      <Stack sx={{ alignItems: 'center' }}>
+      <Stack sx={{ alignItems: 'center' }} spacing={2}>
         <CircularProgress size={100} />
         <Stack direction="row">
           {showCommandLineButton}
           <Typography variant="h6" sx={{ maxWidth: 400 }}>Patching Image...</Typography>
         </Stack>
-        <Collapse in={showCommandLine}>
+        <Collapse unmountOnExit in={showCommandLine}>
           <CommandLine totalOutput={totalOutput}></CommandLine>
         </Collapse>
       </Stack>
@@ -193,30 +340,54 @@ export function App() {
   )
 
   const successPage = (
-    <Stack sx={{ alignItems: 'center' }} spacing={1.5}>
+    <Stack sx={{ alignItems: 'center' }} spacing={2}>
       <Box
         component="img"
         alt="celebration icon"
         src="celebration-icon.png"
       />
       <Stack sx={{ alignItems: 'center' }}>
-        <Typography align='center' variant="h6">Successfully patched image</Typography>
+        <Typography align='center' variant="h6">Created new patched image</Typography>
         <Stack direction="row">
           {showCommandLineButton}
-          <Typography align='center' variant="h6">{imageName}!</Typography>
+          <Typography align='center' variant="h6">{selectedImage}!</Typography>
         </Stack>
       </Stack>
-      <Button
-        onClick={() => {
-          clearInput();
-          setShowSuccess(false);
-          setShowPreload(true);
-        }}>
-        Return
-      </Button>
-      <Collapse in={showCommandLine}>
+      <Collapse unmountOnExit in={showCommandLine}>
         <CommandLine totalOutput={totalOutput}></CommandLine>
       </Collapse>
+      <Stack direction={showCommandLine ? "row" : "column"} spacing={2} sx={{ alignSelf: showCommandLine ? 'start' : 'inherit', alignItems: 'center' }}>
+        <Stack direction="row" spacing={2}>
+          <Button onClick={() => {
+            triggerTrivy();
+          }}
+            disabled={vulnState === VULN_LOADING}
+          >
+            Scan Patched Image
+          </Button>
+          <Button
+            onClick={() => {
+              clearInput();
+              setShowSuccess(false);
+              setShowPreload(true);
+            }}
+            disabled={vulnState === VULN_LOADING}>
+            Return
+          </Button>
+        </Stack>
+        {vulnState !== VULN_UNLOADED &&
+          <Typography >
+            <Box sx={{ fontWeight: 'bold', m: 1 }}>Vulnerabilities:
+            </Box>
+          </Typography>
+        }
+        {vulnState !== VULN_UNLOADED &&
+          < VulnerabilityDisplay
+            vulnerabilityCount={vulnerabilityCount}
+            vulnState={vulnState}
+            setVulnState={setVulnState}
+          />}
+      </Stack>
     </Stack>
   );
 
@@ -228,20 +399,20 @@ export function App() {
         src="error-icon.png"
       />
       <Stack sx={{ alignItems: 'center' }} >
-        <Typography align='center' variant="h6">Failed to patch {imageName}</Typography>
+        <Typography align='center' variant="h6">Failed to patch {selectedImage}</Typography>
         <Stack direction="row">
           {showCommandLineButton}
           <Typography align='center' variant="h6">{errorText}</Typography>
         </Stack>
       </Stack>
+      <Collapse unmountOnExit in={showCommandLine}>
+        <CommandLine totalOutput={totalOutput}></CommandLine>
+      </Collapse>
       <Button onClick={() => {
         clearInput();
         setShowFailure(false);
         setShowPreload(true);
       }}>Return</Button>
-      <Collapse in={showCommandLine}>
-        <CommandLine totalOutput={totalOutput}></CommandLine>
-      </Collapse>
     </Stack>
   )
 
@@ -252,7 +423,7 @@ export function App() {
       alignItems="center"
       minHeight="100vh"
     >
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={2} alignItems='center'>
         <Stack sx={{ alignItems: 'center' }} spacing={1.5}>
           <Box
             component="img"
@@ -283,8 +454,13 @@ export function App() {
             patchImage={patchImage}
             useContainerdChecked={useContainerdChecked}
             setUseContainerdChecked={setUseContainerdChecked}
-            imageName={imageName}
-            setImageName={setImageName}
+            jsonFileName={jsonFileName}
+            setJsonFileName={setJsonFileName}
+            vulnerabilityCount={vulnerabilityCount}
+            triggerTrivy={triggerTrivy}
+            getTrivyOutput={getTrivyOutput}
+            vulnState={vulnState}
+            setVulnState={setVulnState}
           />}
         {showLoading && loadingPage}
         {showSuccess && successPage}
