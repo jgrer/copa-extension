@@ -5,6 +5,7 @@ import * as util from "util";
 
 export const exec = util.promisify(originalExec);
 
+console.log("test");
 // keep a handle on the app to stop it at the end of tests
 let dashboard: DesktopUI;
 
