@@ -5,7 +5,6 @@ import * as util from "util";
 
 export const exec = util.promisify(originalExec);
 
-console.log("test");
 // keep a handle on the app to stop it at the end of tests
 let dashboard: DesktopUI;
 
@@ -13,7 +12,7 @@ beforeAll(async () => {
   await exec(`docker build -t copacetic/copacetic-docker-desktop-extension:latest .`);
 
   await exec(`docker extension install -f copacetic/copacetic-docker-desktop-extension:latest`);
-});
+}, 120000);
 
 describe("Test my extension", () => {
   test("should be functional", async () => {
