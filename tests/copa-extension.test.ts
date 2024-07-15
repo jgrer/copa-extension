@@ -10,11 +10,13 @@ console.log("test");
 let dashboard: DesktopUI;
 
 beforeAll(async () => {
-  await exec(`docker build -t copacetic/copacetic-docker-desktop-extension:latest .`, {
-    cwd: "my-extension-src-root",
-  });
+  await exec(`make build-extension`);
+  await exec(`make install-extension`);
+  // await exec(`docker build -t copacetic/copacetic-docker-desktop-extension:latest .`, {
+  //   cwd: "my-extension-src-root",
+  // });
 
-  await exec(`docker extension install -f copacetic/copacetic-docker-desktop-extension:latest`);
+  // await exec(`docker extension install -f copacetic/copacetic-docker-desktop-extension:latest`);
 });
 
 describe("Test my extension", () => {
