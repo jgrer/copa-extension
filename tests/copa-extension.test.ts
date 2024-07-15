@@ -10,20 +10,18 @@ console.log("test");
 let dashboard: DesktopUI;
 
 beforeAll(async () => {
-  await exec(`make build-extension`);
-  await exec(`make install-extension`);
-  // await exec(`docker build -t copacetic/copacetic-docker-desktop-extension:latest .`, {
-  //   cwd: "my-extension-src-root",
-  // });
+  await exec(`docker build -t copacetic/copacetic-docker-desktop-extension:latest .`, {
+    cwd: "my-extension-src-root",
+  });
 
-  // await exec(`docker extension install -f copacetic/copacetic-docker-desktop-extension:latest`);
+  await exec(`docker extension install -f copacetic/copacetic-docker-desktop-extension:latest`);
 });
 
 describe("Test my extension", () => {
   test("should be functional", async () => {
     dashboard = await DesktopUI.start();
 
-    const eFrame = await dashboard.navigateToExtension("copacetic/copacetic-docker-desktop-extension");
+    const eFrame = await dashboard.navigateToExtension("copacetic/copacetic-docker-desktop-extension:latest");
 
     // use puppeteer APIs to manipulate the UI, click on buttons, expect visual display and validate your extension
     // await eFrame.waitForSelector("#someElementId");
@@ -32,5 +30,5 @@ describe("Test my extension", () => {
 
 afterAll(async () => {
   dashboard?.stop();
-  await exec(`docker extension uninstall copacetic/copacetic-docker-desktop-extension`);
+  await exec(`docker extension uninstall copacetic/copacetic-docker-desktop-extension:latest`);
 });
