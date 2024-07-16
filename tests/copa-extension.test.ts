@@ -28,4 +28,4 @@ describe("Test my extension", () => {
 afterAll(async () => {
   dashboard?.stop();
   await exec(`docker extension uninstall copacetic/copacetic-docker-desktop-extension:latest`);
-});
+}, 120000);
