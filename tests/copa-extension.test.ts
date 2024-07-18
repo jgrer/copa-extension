@@ -10,16 +10,16 @@ let dashboard: DesktopUI;
 
 beforeAll(async () => { 
   await exec(`json -I -f ~/.docker/desktop/settings.json -e "this.onlyMarketplaceExtensions='false'"`);
-  originalExec('cat  ~/.docker/desktop/settings.json', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
-    console.log(`stdout: ${stdout}`);
-    console.error(`stderr: ${stderr}`);
-  });
-  // await exec(`docker build -t copacetic/copacetic-docker-desktop-extension:latest .`);
-  // await exec(`docker extension install -f copacetic/copacetic-docker-desktop-extension:latest`);
+  // originalExec('cat  ~/.docker/desktop/settings.json', (error, stdout, stderr) => {
+  //   if (error) {
+  //     console.error(`exec error: ${error}`);
+  //     return;
+  //   }
+  //   console.log(`stdout: ${stdout}`);
+  //   console.error(`stderr: ${stderr}`);
+  // });
+  await exec(`docker build -t copacetic/copacetic-docker-desktop-extension:latest .`);
+  await exec(`docker extension install -f copacetic/copacetic-docker-desktop-extension:latest`);
 }, 120000);
 
 describe("Test my extension", () => {
