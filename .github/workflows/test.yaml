@@ -20,5 +20,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install json library
+        run: npm i json
+        
       - name: Run Jest tests
         run: npm test
