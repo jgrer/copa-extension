@@ -9,7 +9,7 @@ export const exec = util.promisify(originalExec);
 let dashboard: DesktopUI;
 
 beforeAll(async () => { 
-  // await exec(`json -I -f ~/.docker/desktop/settings.json -e "this.extensionsPrivateMarketplace='false'"`);
+  await exec(`json -I -f ~/.docker/desktop/settings.json -e "this.onlyMarketplaceExtensions='false'"`);
   originalExec('cat  ~/.docker/desktop/settings.json', (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
