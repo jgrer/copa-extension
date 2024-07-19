@@ -26,5 +26,8 @@ jobs:
       - name: Install json library
         run: npm i json
 
+      - name: Lookup Docker registry
+        run: nslookup registry-1.docker.io
+
       - name: Run Jest tests
         run: npm test
