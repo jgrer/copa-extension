@@ -6,14 +6,11 @@ jobs:
   main-test:
     runs-on: ubuntu-latest
     steps:
-      - id: start_desktop
-        uses: docker/desktop-action/start@v0.3.6
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
       - name: Checkout code
         uses: actions/checkout@v3
+        
+      - id: start_desktop
+        uses: docker/desktop-action/start@v0.3.6
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -25,9 +22,6 @@ jobs:
 
       - name: Install json library
         run: npm i json
-
-      - name: Lookup Docker registry
-        run: nslookup registry-1.docker.io
 
       - name: Run Jest tests
         run: npm test
