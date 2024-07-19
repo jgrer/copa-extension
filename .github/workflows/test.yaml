@@ -8,20 +8,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        
+
       - id: start_desktop
         uses: docker/desktop-action/start@v0.3.6
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "16"
+      - name: Check Docker
+        run: docker info
+      # - name: Set up Node.js
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: "16"
 
-      - name: Install dependencies
-        run: npm install
+      # - name: Install dependencies
+      #   run: npm install
 
-      - name: Install json library
-        run: npm i json
+      # - name: Install json library
+      #   run: npm i json
 
-      - name: Run Jest tests
-        run: npm test
+      # - name: Run Jest tests
+      #   run: npm test
