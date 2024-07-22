@@ -14,16 +14,19 @@ jobs:
 
       - name: Check Docker
         run: docker info
-      # - name: Set up Node.js
-      #   uses: actions/setup-node@v3
-      #   with:
-      #     node-version: "16"
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
 
-      # - name: Install dependencies
-      #   run: npm install
+      - name: Install dependencies
+        run: npm install
 
-      # - name: Install json library
-      #   run: npm i json
+      - name: Install json library
+        run: npm i json
 
-      # - name: Run Jest tests
-      #   run: npm test
+      - name: test
+        run: json -I -f ~/.docker/desktop/settings.json -e "this.onlyMarketplaceExtensions='false
+
+      - name: Run Jest tests
+        run: npm test
