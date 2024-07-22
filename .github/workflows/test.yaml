@@ -26,7 +26,13 @@ jobs:
         run: npm i json
 
       - name: test
-        run: json -I -f ~/.docker/desktop/settings.json -e "this.onlyMarketplaceExtensions='false
+        run: json -I -f ~/.docker/desktop/settings.json -e "this.onlyMarketplaceExtensions='false'"
+
+      - name: test2
+        run: docker build -t copacetic/copacetic-docker-desktop-extension:latest .
+
+      - name: test3
+        run: docker extension install -f copacetic/copacetic-docker-desktop-extension:latest
 
       - name: Run Jest tests
         run: npm test
