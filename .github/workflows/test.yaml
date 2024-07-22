@@ -25,9 +25,6 @@ jobs:
       - name: Install json library
         run: npm i json
 
-      - name: test
-        run: json -I -f ~/.docker/desktop/settings.json -e "this.onlyMarketplaceExtensions='false'"
-
       - name: test2
         run: docker build -t copacetic/copacetic-docker-desktop-extension:latest .
 
