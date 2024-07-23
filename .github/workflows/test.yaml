@@ -28,8 +28,5 @@ jobs:
       - name: test2
         run: docker build -t copacetic/copacetic-docker-desktop-extension:latest .
 
-      - name: test3
-        run: docker extension install -f copacetic/copacetic-docker-desktop-extension:latest
-
       - name: Run Jest tests
         run: npm test
