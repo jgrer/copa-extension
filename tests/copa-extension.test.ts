@@ -8,11 +8,6 @@ export const exec = util.promisify(originalExec);
 // keep a handle on the app to stop it at the end of tests
 let dashboard: DesktopUI;
 
-beforeAll(async () => { 
-  await exec(`json -I -f ~/.docker/desktop/settings.json -e "this.onlyMarketplaceExtensions='false'"`);
-  await exec(`docker extension install -f copacetic/copacetic-docker-desktop-extension:latest`);
-}, 120000);
-
 describe("Test my extension", () => {
   test("should be functional", async () => {
     dashboard = await DesktopUI.start();
