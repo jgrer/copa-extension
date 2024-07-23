@@ -12,8 +12,6 @@ jobs:
       - id: start_desktop
         uses: docker/desktop-action/start@v0.3.6
 
-      - name: Check Docker
-        run: docker info
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -22,11 +20,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install json library
-        run: npm i json
+      - name: Edit Docker Desktop setting file
+        shell: bash
+        run: |
+          echo $(jq '. += {onlyMarketplaceExtensions: false}' ~/.docker/desktop/settings.json) > ~/.docker/desktop/settings.json
+          echo ~/.docker/desktop/settings.json
 
-      - name: test2
-        run: docker build -t copacetic/copacetic-docker-desktop-extension:latest .
+      - name: Validate metadata
+        run: docker extension validate ./metadata.json
+
+      - name: Build extension
+        run: docker build -t copacetic/copacetic-docker-desktop-extension .
+
+      - name: Install extension
+        run: docker extension install copacetic/copacetic-docker-desktop-extension -f
 
       - name: Run Jest tests
         run: npm test
