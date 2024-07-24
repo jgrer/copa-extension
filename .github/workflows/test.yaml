@@ -9,9 +9,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - id: start_desktop
-        uses: docker/desktop-action/start@v0.3.6
-
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -22,6 +19,9 @@ jobs:
 
       - name: Install puppeteer 
         run: npm i puppeteer
+
+      - id: start_desktop
+        uses: docker/desktop-action/start@v0.3.6
 
       - name: Edit Docker Desktop setting file
         shell: bash
