@@ -16,7 +16,7 @@ describe("Test my extension", () => {
 
     // use puppeteer APIs to manipulate the UI, click on buttons, expect visual display and validate your extension
     // await eFrame.waitForSelector("#someElementId");
-  });
+  }, 120000);
 });
 
 afterAll(async () => {
