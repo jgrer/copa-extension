@@ -20,6 +20,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install puppeteer 
+        run: npm i puppeteer
+
       - name: Edit Docker Desktop setting file
         shell: bash
         run: |
@@ -37,3 +40,4 @@ jobs:
 
       - name: Run Jest tests
         run: npm test
+ 
