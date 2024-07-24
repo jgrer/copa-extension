@@ -18,7 +18,10 @@ jobs:
         run: npm install
 
       - name: Install puppeteer 
-        run: npm i puppeteer
+        run: npm i puppeteer-core
+
+      - name: Install get-port
+        run: npm install get-port
 
       - id: start_desktop
         uses: docker/desktop-action/start@v0.3.6
@@ -40,4 +43,3 @@ jobs:
 
       - name: Run Jest tests
         run: npm test
- 
