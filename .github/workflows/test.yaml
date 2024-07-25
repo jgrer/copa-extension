@@ -41,5 +41,8 @@ jobs:
       - name: Install extension
         run: docker extension install copacetic/copacetic-docker-desktop-extension -f
 
+      - name: Check firewall
+        run: sudo ufw status
+
       - name: Run Jest tests
         run: npm test
