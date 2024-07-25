@@ -18,7 +18,7 @@ jobs:
         run: npm install
 
       - name: Install puppeteer 
-        run: npm i puppeteer-core
+        run: npm i puppeteer-core@19.7.0
 
       - name: Install get-port
         run: npm install get-port
