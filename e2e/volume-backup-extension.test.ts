@@ -27,7 +27,7 @@ beforeAll(async () => {
   if (process.env.SKIP_EXTENSION_IMAGE_BUILD != 'true') {
     console.log('starting building extension...');
     await exec(`copacetic/copacetic-docker-desktop-extension:latest`, {
-      cwd: '../../',
+      cwd: '../',
     });
     console.log('extension built');
   }
