@@ -53,7 +53,7 @@ describe('Test Logs Explorer UI', () => {
     dashboard = await DesktopUI.start();
 
     const eFrame = await dashboard.navigateToExtension(
-      'projectcopacetic/copacetic-docker-desktop-extension:test',
+      'projectcopacetic/copacetic-docker-desktop-extension',
     );
 
     console.log(eFrame);
