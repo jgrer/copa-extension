@@ -38,7 +38,7 @@ jobs:
 
       - name: Build extension
         run: |
-          make build-extension
+          make build-extension TAG=test
 
       - name: Kill Mono process running on port 8084 to unblock it # https://github.com/actions/runner-images/issues/2821
         shell: bash

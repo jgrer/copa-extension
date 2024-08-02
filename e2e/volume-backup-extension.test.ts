@@ -26,7 +26,7 @@ let dashboard: DesktopUI;
 beforeAll(async () => {
   if (process.env.SKIP_EXTENSION_IMAGE_BUILD != 'true') {
     console.log('starting building extension...');
-    await exec(`copacetic/copacetic-docker-desktop-extension:latest`, {
+    await exec(`projectcopacetic/copacetic-docker-desktop-extension:test`, {
       cwd: '../',
     });
     console.log('extension built');
@@ -36,7 +36,7 @@ beforeAll(async () => {
   // );
   // console.log('sample volume and container created');
   await exec(
-    `docker extension install -f copacetic/copacetic-docker-desktop-extension:0.1.0`,
+    `docker extension install -f projectcopacetic/copacetic-docker-desktop-extension:test`,
   );
   console.log('extension installed');
 });
@@ -44,10 +44,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await dashboard?.stop();
   console.log('dashboard app closed');
-  await exec(`docker extension uninstall copacetic/copacetic-docker-desktop-extension:0.1.0`);
-  console.log('extension uninstalled');
-  await exec(`docker container rm e2e-test-container`);
-  await exec(`docker volume rm e2e-test-volume`);
+  await exec(`docker extension uninstall projectcopacetic/copacetic-docker-desktop-extension:test`);
   console.log('extension uninstalled');
 });
 
@@ -56,7 +53,7 @@ describe('Test Logs Explorer UI', () => {
     dashboard = await DesktopUI.start();
 
     const eFrame = await dashboard.navigateToExtension(
-      'copacetic/copacetic-docker-desktop-extension:0.1.0',
+      'projectcopacetic/copacetic-docker-desktop-extension:test',
     );
 
     console.log(eFrame);
